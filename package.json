@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@vercel/mcp-adapter": "0.8.2",
+    "dotenv": "^17.0.1",
+    "googleapis": "^150.0.1",
     "next": "15.2.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
