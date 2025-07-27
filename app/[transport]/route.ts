@@ -1,21 +1,24 @@
 import { createMcpHandler } from "@vercel/mcp-adapter";
 import { z } from "zod";
-import { env, calendar, oauth2Client } from "@/app/config/env";
-import { google } from "googleapis";
+import { env } from "@/app/config/env";
+import { googleAuthService } from "../auth/google-auth";
+import { Logger } from "../utils/logger";
+
+const logger = new Logger("MCP:Server");
 
 const handler = createMcpHandler(
   async (server) => {
-    server.tool(
-      "echo",
-      "Echo a message for testing",
-      {
-        message: z.string(),
-      },
-      async ({ message }) => ({
-        content: [{ type: "text", text: `Tool echo: ${message}` }],
-      })
-    );
+    // Initialize Google Calendar authentication on server startup
+    logger.info("Initializing Google Calendar authentication...");
+    const isAuthenticated = await googleAuthService.initialize();
 
+    if (!isAuthenticated) {
+      logger.warn(
+        "Google Calendar token is currently not authenticated. Some tools may not work properly."
+      );
+    } else {
+      logger.info("Google Calendar authentication initialized successfully");
+    }
     server.tool(
       "create_medical_appointment",
       "Schedule a medical appointment on Google Calendar",
@@ -67,17 +70,25 @@ const handler = createMcpHandler(
         timeZone,
       }) => {
         try {
-          // Build comprehensive description
-          let fullDescription = description || "";
+          // Check if authentication is available
+          if (!googleAuthService.isAuthenticated()) {
+            throw new Error(
+              "Your Google Calendar token was not processed. Please run the authentication setup first."
+            );
+          }
 
-          if (patientName) fullDescription += `\nPatient: ${patientName}`;
-          if (doctorName) fullDescription += `\nDoctor: ${doctorName}`;
-          if (appointmentType) fullDescription += `\nType: ${appointmentType}`;
+          const calendar = googleAuthService.getCalendar();
+          const oauth2Client = googleAuthService.getOAuth2Client();
+
+          let details = description || "";
+          if (patientName) details += `\nPatient: ${patientName}`;
+          if (doctorName) details += `\nDoctor: ${doctorName}`;
+          if (appointmentType) details += `\nType: ${appointmentType}`;
 
           // Create the event with proper typing
           const eventResource = {
             summary,
-            description: fullDescription.trim(),
+            description: details.trim(),
             location,
             start: {
               dateTime: start,
@@ -91,16 +102,17 @@ const handler = createMcpHandler(
             reminders: {
               useDefault: false,
               overrides: [
-                { method: "email" as const, minutes: 24 * 60 }, // 24 hours before
-                { method: "popup" as const, minutes: 30 }, // 30 minutes before
+                { method: "email" as const, minutes: 24 * 60 },
+                { method: "popup" as const, minutes: 30 },
               ],
             },
-            colorId: "11", // Red color for medical appointments
+            colorId: "11", //TODO: Cycle colors
           };
+
           const response = await calendar.events.insert({
             calendarId: "primary",
             requestBody: eventResource,
-            sendNotifications: true, // Send email notifications
+            sendNotifications: true,
             auth: oauth2Client,
           });
 
@@ -123,8 +135,6 @@ const handler = createMcpHandler(
           };
         } catch (error: unknown) {
           console.error("Error creating medical appointment:", error);
-
-          // Handle specific Google API errors with proper typing
           if (error && typeof error === "object" && "code" in error) {
             const apiError = error as { code: number; message: string };
             if (apiError.code === 401) {
@@ -168,6 +178,16 @@ const handler = createMcpHandler(
       },
       async ({ maxResults, timeMin, timeMax }) => {
         try {
+          // Check if authentication is available
+          if (!googleAuthService.isAuthenticated()) {
+            throw new Error(
+              "Your Google Calendar token was not processed. Please run the authentication setup first."
+            );
+          }
+
+          const calendar = googleAuthService.getCalendar();
+          const oauth2Client = googleAuthService.getOAuth2Client();
+
           const response = await calendar.events.list({
             calendarId: "primary",
             timeMin: timeMin || new Date().toISOString(),
@@ -192,7 +212,7 @@ const handler = createMcpHandler(
           }
 
           const appointmentsList = events
-            .map((event, index) => {
+            .map((event: any, index: number) => {
               const start =
                 event.start?.dateTime ||
                 event.start?.date ||
@@ -228,16 +248,12 @@ const handler = createMcpHandler(
   {
     capabilities: {
       tools: {
-        echo: {
-          description: "Echo a message for testing",
-        },
         create_medical_appointment: {
           description:
             "Create a medical appointment on Google Calendar with patient and doctor details",
         },
         list_upcoming_appointments: {
-          description:
-            "List upcoming medical appointments from Google Calendar",
+          description: "List upcoming appointments from Google Calendar",
         },
       },
     },

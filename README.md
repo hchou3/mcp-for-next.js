@@ -1,7 +1,40 @@
-# Example Next.js MCP Server
+# Healthcare MCP Server with Google Calendar Integration
 
 **Uses `@vercel/mcp-adapter`**
 
+This MCP server provides tools for managing medical appointments through Google Calendar integration.
+
+## Setup
+
+### 1. Environment Variables
+
+Create a `.env` file with the following variables:
+
+```env
+REDIS_URL=your_redis_url
+GOOGLE_CLOUD_KEY=your_google_cloud_api_key
+GOOGLE_AUTH_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_AUTH_CLIENT_SECRET=your_google_oauth_client_secret
+GOOGLE_REDIRECT_URI=your_redirect_uri
+```
+
+### 2. Google Calendar Authentication
+
+Before using the calendar features, you need to authenticate with Google Calendar:
+
+```bash
+npm run setup-auth
+```
+
+This will guide you through the OAuth2 authentication process and save your tokens to environment variables.
+
+### 3. Available Tools
+
+The server provides the following tools:
+
+- **`echo`**: Test tool that echoes back a message
+- **`create_medical_appointment`**: Schedule medical appointments on Google Calendar
+- **`list_upcoming_appointments`**: List upcoming appointments from Google Calendar
 
 ## Usage
 
