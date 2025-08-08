@@ -9,6 +9,10 @@
     "setup-auth": "tsx scripts/setup-auth.ts"
   },
   "dependencies": {
+    "@mistralai/mistralai": "^1.7.5",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.53.0",
+    "@vercel/blob": "^1.1.1",
     "@vercel/mcp-adapter": "0.8.2",
     "dotenv": "^17.0.1",
     "googleapis": "^150.0.1",
@@ -21,8 +25,8 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
-    "typescript": "^5",
-    "tsx": "^4.7.0"
+    "tsx": "^4.7.0",
+    "typescript": "^5"
   },
   "packageManager": "pnpm@8.15.7+sha512.c85cd21b6da10332156b1ca2aa79c0a61ee7ad2eb0453b88ab299289e9e8ca93e6091232b25c07cbf61f6df77128d9c849e5c9ac6e44854dbd211c49f3a67adc"
 }

@@ -10,9 +10,11 @@ async function setupAuthentication() {
   console.log("Google Calendar Authentication Setup");
   console.log("=====================================");
   console.log();
+  console.log("Script is running...");
 
   try {
     // Try to initialize with existing tokens
+    console.log("Checking for existing authentication...");
     const isAuthenticated = await googleAuthService.initialize();
 
     if (isAuthenticated) {
@@ -27,7 +29,9 @@ async function setupAuthentication() {
     console.log();
 
     // Generate auth URL using the centralized service
+    console.log("Generating authentication URL...");
     const authUrl = googleAuthService.generateAuthUrl();
+    console.log("Auth URL generated successfully");
 
     console.log("Please visit the following URL to authorize access:");
     console.log(authUrl);
@@ -61,13 +65,13 @@ async function setupAuthentication() {
       "Setup failed:",
       error instanceof Error ? error.message : String(error)
     );
+    console.error("Full error:", error);
     process.exit(1);
   }
 }
 
 // Run the setup if this script is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  setupAuthentication();
-}
+console.log("Script loaded, executing setupAuthentication...");
+setupAuthentication();
 
 export { setupAuthentication };

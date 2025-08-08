@@ -3,6 +3,7 @@ import { z } from "zod";
 import { env } from "@/app/config/env";
 import { googleAuthService } from "../auth/google-auth";
 import { Logger } from "../utils/logger";
+import { extractTextFromPDF } from "../mistral-ai";
 
 const logger = new Logger("MCP:Server");
 
@@ -19,6 +20,21 @@ const handler = createMcpHandler(
     } else {
       logger.info("Google Calendar authentication initialized successfully");
     }
+
+    server.tool(
+      "extract_text_from_pdf_and_save_to_file",
+      "Extract text from a PDF file",
+      {
+        pdf_path: z.string().describe("Path to the PDF file"),
+      },
+      async ({ pdf_path }) => {
+        const text = await extractTextFromPDF(pdf_path);
+        return {
+          content: [{ type: "text", text: text.join("\n") }],
+        };
+      }
+    );
+
     server.tool(
       "create_medical_appointment",
       "Schedule a medical appointment on Google Calendar",
@@ -248,6 +264,10 @@ const handler = createMcpHandler(
   {
     capabilities: {
       tools: {
+        batch_schedule_medical_appointments: {
+          description:
+            "Schedule medical appointments for the next 21-day period",
+        },
         create_medical_appointment: {
           description:
             "Create a medical appointment on Google Calendar with patient and doctor details",
