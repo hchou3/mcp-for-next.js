@@ -15,6 +15,8 @@ const envSchema = z.object({
   GOOGLE_REFRESH_TOKEN: z.string().optional(),
   GOOGLE_ACCESS_TOKEN: z.string().optional(),
   MISTRAL_API_KEY: z.string(),
+  BLOB_READ_AND_WRITE: z.string(),
+  PROJECT_ID: z.string(),
 });
 
 // Function to validate environment variables
@@ -30,6 +32,8 @@ const validateEnv = () => {
       GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN,
       GOOGLE_ACCESS_TOKEN: process.env.GOOGLE_ACCESS_TOKEN,
       MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
+      BLOB_READ_AND_WRITE: process.env.BLOB_READ_AND_WRITE,
+      PROJECT_ID: process.env.PROJECT_ID,
     };
     const parsed = envSchema.parse(env);
     logger.info("Environment variables validated successfully");

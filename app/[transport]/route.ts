@@ -22,7 +22,7 @@ const handler = createMcpHandler(
     }
 
     server.tool(
-      "extract_text_from_pdf_and_save_to_file",
+      "extract_text_from_pdf_and_save",
       "Extract text from a PDF file",
       {
         pdf_path: z.string().describe("Path to the PDF file"),
@@ -264,6 +264,9 @@ const handler = createMcpHandler(
   {
     capabilities: {
       tools: {
+        extract_text_from_pdf_and_save: {
+          description: "Extract text from a PDF file given its path",
+        },
         batch_schedule_medical_appointments: {
           description:
             "Schedule medical appointments for the next 21-day period",

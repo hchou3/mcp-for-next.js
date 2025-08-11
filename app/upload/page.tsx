@@ -21,8 +21,10 @@ export default function UploadPage() {
   const validateFile = (file: File): string | null => {
     const maxSize = 10 * 1024 * 1024; // 10MB
 
-    if (file.type !== "application/pdf") {
-      return "File type not supported. Please upload PDF, DOC, DOCX, TXT, or image files.";
+    const isPdfByMime = file.type === "application/pdf";
+    const isPdfByExt = file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdfByMime && !isPdfByExt) {
+      return "Only PDF files are allowed.";
     }
 
     if (file.size > maxSize) {
@@ -63,7 +65,30 @@ export default function UploadPage() {
         setUploadedFiles((prev) =>
           prev.map((f) => (f.id === fileId ? { ...f, progress: 25 } : f))
         );
-        const blob = await put(file.name, file, { access: "public" });
+        // Read file as base64 and send to API
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            const commaIndex = result.indexOf(",");
+            resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+
+        const resp = await fetch("/api/upload-videos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileBase64: base64,
+            fileName: file.name,
+            contentType: file.type,
+          }),
+        });
+
+        if (!resp.ok) throw new Error("Upload failed");
+        const data: { url: string; downloadUrl?: string } = await resp.json();
 
         // Update progress to 100%
         setUploadedFiles((prev) =>
@@ -73,13 +98,13 @@ export default function UploadPage() {
                   ...f,
                   status: "success" as const,
                   progress: 100,
-                  url: blob.url, // Store the blob URL for future reference
+                  url: data.url,
                 }
               : f
           )
         );
 
-        console.log(`File uploaded successfully: ${blob.url}`);
+        console.log(`File uploaded successfully: ${data.url}`);
       } catch (uploadError) {
         console.error("Upload error:", uploadError);
         setUploadedFiles((prev) =>
@@ -221,7 +246,7 @@ export default function UploadPage() {
               marginBottom: "1.5rem",
             }}
           >
-            Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, GIF (Max 10MB)
+            Supported format: PDF (Max 10MB)
           </p>
 
           <label
@@ -239,7 +264,7 @@ export default function UploadPage() {
             <input
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+              accept=".pdf,application/pdf"
               onChange={handleFileInput}
               style={{ display: "none" }}
             />
